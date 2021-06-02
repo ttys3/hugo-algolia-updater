@@ -10,7 +10,10 @@ LD_FLAGS := -s -w $(LD_FLAGS_BASE)
 
 IMPORTANT_GO_ENV_VARS := "GOPATH|GO111MODULE|GOARCH|GOCACHE|GOMODCACHE|GONOPROXY|GONOSUMDB|GOPRIVATE|GOPROXY|GOSUMDB|GOMOD|CGO"
 
-.PHONY: build/binary
+.PHONY: all
+all: binary merge-tool
+
+.PHONY: binary
 binary: export CGO_ENABLED=1
 binary:
 	@echo "\n###### building $(NAME)"
@@ -31,6 +34,7 @@ debug:
 clean:
 	@rm -f $(NAME)
 	@rm -f $(NAME).tar.gz
+	@rm -f merge-tool
 
 fmt:
 	command -v gofumpt || (WORK=$(shell pwd) && cd /tmp && GO111MODULE=on go get mvdan.cc/gofumpt && cd $(WORK))

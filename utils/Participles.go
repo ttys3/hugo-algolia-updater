@@ -1,13 +1,14 @@
 package utils
 
 import (
-	"github.com/deckarep/golang-set"
-	"github.com/go-ego/gse"
-	"github.com/yanyiwu/gojieba"
-	"github.com/ttys3/hugo-algolia-updater/constant1"
 	"log"
 	"strings"
 	"sync/atomic"
+
+	"github.com/deckarep/golang-set"
+	"github.com/go-ego/gse"
+	"github.com/ttys3/hugo-algolia-updater/constant1"
+	"github.com/yanyiwu/gojieba"
 )
 
 var (
@@ -39,7 +40,7 @@ func Participles(title string, content string) []string {
 	jiebaSet := array2set(jiebaArray)
 	segoSet := array2set(segoArray)
 	set := segoSet.Union(jiebaSet)
-	//set:=jiebaSet
+	// set:=jiebaSet
 
 	set = removeWord(set)
 	slice := set.ToSlice()
@@ -50,7 +51,7 @@ func Participles(title string, content string) []string {
 }
 
 func jieBaParticiples(context string) []string {
-	//defer jieba.Free()
+	// defer jieba.Free()
 	jiebaParticiplesArray := jieba.CutForSearch(context, true)
 	return jiebaParticiplesArray
 }
@@ -59,7 +60,7 @@ func segoParticiples(context string) []string {
 	return seg.CutAll(context)
 }
 
-//接口数组转字符串数组
+// 接口数组转字符串数组
 func InterfaceArray2StringArray(interfaceArray []interface{}) []string {
 	var stringArray []string
 	for _, str := range interfaceArray {
@@ -76,7 +77,7 @@ func InterfaceArray2StringArray(interfaceArray []interface{}) []string {
 	return stringArray
 }
 
-//接口数组转字符串数组
+// 接口数组转字符串数组
 func array2set(aArray []string) mapset.Set {
 	set := mapset.NewSet()
 	for _, obj := range aArray {
@@ -86,9 +87,8 @@ func array2set(aArray []string) mapset.Set {
 	return set
 }
 
-//取出停顿词
+// 取出停顿词
 func removeWord(wordSet mapset.Set) mapset.Set {
-
 	for index := range constant1.StopArray {
 		wordSet.Remove(constant1.StopArray[index])
 	}

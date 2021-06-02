@@ -1,25 +1,28 @@
 package constant1
 
 import (
-	"github.com/ttys3/hugo-algolia-updater/po"
 	"container/list"
 	"fmt"
 	"regexp"
 	"sync"
+
+	"github.com/ttys3/hugo-algolia-updater/po"
 )
 
-var WaitGroup = sync.WaitGroup{}
-var Queue = NewQueue()
-var AlgoliasMap = map[string]po.Algolia{}
-var CacheAlgoliasMap = map[string]po.Algolia{}
-var Md5Map = po.NewConcurrentMap(make(map[string]interface{}))
-var NeedArticleList = []*po.Article{}
-var NeedAlgoliasList = []*po.Algolia{}
-var ArticleMap = po.NewConcurrentMap(make(map[string]interface{}))
-var StopArray = []string{}
-var HtmlReg, _ = regexp.Compile("<.{0,200}?>")
-var PointReg, _ = regexp.Compile("\n|\t|\r")
-var NumberReg, _ = regexp.Compile("[0-9]+|[0-9]+\\.+[0-9]+")
+var (
+	WaitGroup        = sync.WaitGroup{}
+	Queue            = NewQueue()
+	AlgoliasMap      = map[string]po.Algolia{}
+	CacheAlgoliasMap = map[string]po.Algolia{}
+	Md5Map           = po.NewConcurrentMap(make(map[string]interface{}))
+	NeedArticleList  = []*po.Article{}
+	NeedAlgoliasList = []*po.Algolia{}
+	ArticleMap       = po.NewConcurrentMap(make(map[string]interface{}))
+	StopArray        = []string{}
+	HtmlReg, _       = regexp.Compile("<.{0,200}?>")
+	PointReg, _      = regexp.Compile("\n|\t|\r")
+	NumberReg, _     = regexp.Compile("[0-9]+|[0-9]+\\.+[0-9]+")
+)
 
 const N int = 10
 
@@ -38,16 +41,19 @@ func NewQueue() *QueueNode {
 	q.data = list.New()
 	return q
 }
+
 func (q *QueueNode) Push(v interface{}) {
 	defer lock.Unlock()
 	lock.Lock()
 	q.data.PushFront(v)
 }
+
 func (q *QueueNode) Dump() {
 	for iter := q.data.Back(); iter != nil; iter = iter.Prev() {
 		fmt.Println("item:", iter.Value)
 	}
 }
+
 func (q *QueueNode) Pop() interface{} {
 	defer lock.Unlock()
 	lock.Lock()

@@ -1,17 +1,17 @@
 package config
 
-type ConfigYaml struct {
+type Config struct {
 	Algolia struct {
 		Index string `yaml:"index"`
 		Key   string `yaml:"key"`
-		AppID string `yaml:"appID"`
+		AppID string `yaml:"appid"`
 	}
 
 	Http struct {
-		Proxy string `yaml:"httpProxy"`
+		Proxy string `yaml:"http-proxy"`
 	}
 
-	Participles struct {
+	Segment struct {
 		Dict struct {
 			Path     string `yaml:"path"`
 			StopPath string `yaml:"stop-path"`

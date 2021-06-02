@@ -31,7 +31,7 @@ algolia:
 
 #字典和停用词位置
 #使用data目录会让hugo命令报错
-participles:
+segment:
   dict:
     path: "sdata/dict.txt"
     stop-path: "sdata/stop.txt"

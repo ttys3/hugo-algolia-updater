@@ -33,9 +33,9 @@ func InitJieba() {
 	}
 }
 
-func Participles(title string, content string) []string {
-	jiebaArray := jieBaParticiples(content)
-	segoArray := segoParticiples(content)
+func DoSegment(title string, content string) []string {
+	jiebaArray := jieBaSegment(content)
+	segoArray := segoSegment(content)
 	jiebaSet := array2set(jiebaArray)
 	segoSet := array2set(segoArray)
 	set := segoSet.Union(jiebaSet)
@@ -44,18 +44,18 @@ func Participles(title string, content string) []string {
 	set = removeWord(set)
 	slice := set.ToSlice()
 	array := InterfaceArray2StringArray(slice, 2)
-	log.Printf("Participles ---------> title=%s array=%s", title, array)
+	log.Printf("DoSegment ---------> title=%s array=%s", title, array)
 	atomic.AddInt32(&Num, int32(len(array)))
 	return array
 }
 
-func jieBaParticiples(context string) []string {
+func jieBaSegment(context string) []string {
 	// defer jieba.Free()
-	jiebaParticiplesArray := jieba.CutForSearch(context, true)
-	return jiebaParticiplesArray
+	jiebaSegmentsArray := jieba.CutForSearch(context, true)
+	return jiebaSegmentsArray
 }
 
-func segoParticiples(context string) []string {
+func segoSegment(context string) []string {
 	return seg.CutAll(context)
 }
 

@@ -43,7 +43,7 @@ func main() {
 	// 运行编译
 	execHugoBuild()
 
-	participlesStartTime := time.Now().UnixNano() / 1e6
+	segmentsStartTime := time.Now().UnixNano() / 1e6
 
 	articleList := getArticleList()
 
@@ -95,14 +95,14 @@ func main() {
 
 	// 循环添加任务
 	for i := 0; i < taskNum; i++ {
-		pool.AddTask(ParticiplesAsynchronous)
+		pool.AddTask(SegmentsAsynchronous)
 	}
 	pool.Start()
 
 	// 主线程阻塞
 	common.WaitGroup.Wait()
 	pool.Stop()
-	fmt.Println("participles success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-participlesStartTime, 10) + " ms")
+	fmt.Println("segments success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-segmentsStartTime, 10) + " ms")
 
 	// 创建分词
 	algoliaStartTime := time.Now().UnixNano() / 1e6
@@ -127,10 +127,10 @@ func main() {
 		mapObj := common.Struct2Map(article.HugoJsonPost)
 		// fmt.Printf("Struct2Map %#v\n", mapObj)
 
-		if article.Participles != nil {
-			participlesArray := *article.Participles
+		if article.Segments != nil {
+			segmentsArray := *article.Segments
 			var buffer bytes.Buffer
-			for _, str := range participlesArray {
+			for _, str := range segmentsArray {
 				if common.NumberReg.Match([]byte(str)) {
 					continue
 				}
@@ -210,13 +210,13 @@ func getArticleList() []*model.Article {
 }
 
 // 多线程分词
-func ParticiplesAsynchronous() error {
+func SegmentsAsynchronous() error {
 	article := common.Queue.Pop().(*model.Article)
 	content := article.Content
 	mdConf := article.HugoJsonPost
 
-	participles := common.Participles(mdConf.Title, content)
-	article.Participles = &participles
+	segments := common.DoSegment(mdConf.Title, content)
+	article.Segments = &segments
 	fmt.Println("generate success: " + article.HugoJsonPost.Permalink)
 	common.WaitGroup.Done()
 	return nil

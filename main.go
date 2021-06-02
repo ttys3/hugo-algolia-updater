@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ttys3/hugo-algolia-updater/config"
 
 	"go.uber.org/zap"
 
@@ -25,20 +28,72 @@ var (
 	buildTime   string
 )
 
-var showVersion bool
+const DftConfigFile = "config.yaml"
+
+var (
+	showVersion        bool
+	cleanGeneratedJson bool
+	configFile         string
+)
 
 func main() {
+	// init logger
+	// https://github.com/uber-go/zap/issues/717#issuecomment-496612544
+	// The default global logger used by zap.L() and zap.S() is a no-op logger.
+	// To configure the global loggers, you must use ReplaceGlobals.
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
+
+	undo := zap.ReplaceGlobals(logger)
+	defer undo()
+	zap.L().Info("replaced zap's global loggers")
+
 	// nolint: forbidigo
 	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())
 
 	flag.BoolVar(&showVersion, "v", false, "show version and exit")
+	flag.BoolVar(&cleanGeneratedJson, "clean", false, "clean generated json files")
+	flag.StringVar(&configFile, "c", DftConfigFile, "config file path, if not specified, use config.yaml under current working dir")
 	flag.Parse()
 
 	if showVersion {
 		return
 	}
 
-	common.InitJieba()
+	if cleanGeneratedJson {
+		toClean := []string{
+			common.ALGOLIA_COMPLIE_JSON_PATH,
+			common.CACHE_ALGOLIA_JSON_PATH,
+			common.MD5_ALGOLIA_JSON_PATH,
+		}
+		for _, f := range toClean {
+			if err := os.Remove(f); err == nil {
+				zap.S().Infof("%s removed successfully", f)
+			} else {
+				if os.IsNotExist(err) {
+					zap.S().Infof("%s not exists", f)
+				} else {
+					zap.S().Errorf("remove %s failed, err=%v", f, err)
+				}
+			}
+		}
+		return
+	}
+
+	if err := config.Cfg.Load(configFile); err != nil {
+		zap.S().Fatal(err)
+	}
+	if err := config.Cfg.Validate(); err != nil {
+		zap.S().Fatal(err)
+	}
+
+	zap.S().Infof("loaded config: %v", config.Cfg)
+
+	jiebaShutdown := common.InitJieba(config.Cfg.Segment.Dict.Path, config.Cfg.Segment.Dict.StopPath)
+	defer jiebaShutdown()
 
 	startTime := time.Now().UnixNano() / 1e6
 
@@ -154,8 +209,13 @@ func main() {
 
 	uploadStartTime := time.Now().UnixNano() / 1e6
 	// 更新分词
-	common.UpdateAlgolia(objArray)
-	zap.S().Infof("update algolia success: %v ms", strconv.FormatInt((time.Now().UnixNano()/1e6)-uploadStartTime, 10))
+	if err := common.UpdateAlgolia(config.Cfg.Algolia.Index, config.Cfg.Algolia.AppID, config.Cfg.Algolia.AdminKey, objArray); err == nil {
+		zap.S().Infof("update algolia index %s success: %v ms, %v objects",
+			config.Cfg.Algolia.Index, (time.Now().UnixNano()/1e6)-uploadStartTime, len(objArray))
+	} else {
+		zap.S().Fatal(err)
+	}
+
 	saveStartTime := time.Now().UnixNano() / 1e6
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	algoliaBytes, _ := json.Marshal(objArray)

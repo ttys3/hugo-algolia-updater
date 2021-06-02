@@ -3,22 +3,20 @@ package common
 import (
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
-// 修改回来
-var PARENT_DIR_PATH string = GetCurrentPath()
+var WORKING_DIR_PATH = GetWorkingDir()
 
 var (
-	ALGOLIA_COMPLIE_JSON_PATH string = PARENT_DIR_PATH + "/public/algolia.json"
-	CACHE_ALGOLIA_JSON_PATH   string = PARENT_DIR_PATH + "/cache_algolia.json"
-	MD5_ALGOLIA_JSON_PATH     string = PARENT_DIR_PATH + "/md5_algolia.json"
-	Num                       int32  = 0
+	ALGOLIA_COMPLIE_JSON_PATH       = WORKING_DIR_PATH + "/public/algolia.json"
+	CACHE_ALGOLIA_JSON_PATH         = WORKING_DIR_PATH + "/algolia.cache.json"
+	MD5_ALGOLIA_JSON_PATH           = WORKING_DIR_PATH + "/algolia.md5.json"
+	Num                       int32 = 0
 )
 
-func GetCurrentPath() string {
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+func GetWorkingDir() string {
+	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"go.uber.org/zap"
+
 	mapset "github.com/deckarep/golang-set"
 	"github.com/go-ego/gse"
 	"github.com/yanyiwu/gojieba"
@@ -15,16 +17,24 @@ var (
 	jieba *gojieba.Jieba
 )
 
-func InitJieba() {
-	dictPath := GetCurrentPath() + "/data/dict.txt"
+func InitJieba(dictPath, stopWordPath string) func() {
+	if dictPath == "" {
+		dictPath = GetWorkingDir() + "/dict/dict.txt"
+	}
+
+	zap.S().Infof("begin init gse segment with dict=%v", dictPath)
 	seg.LoadDict(dictPath)
 
 	jiebaPathArray := strings.Split(dictPath, ",")
+	zap.S().Infof("begin init jieba segment with dict=%v", jiebaPathArray)
 	jieba = gojieba.NewJieba(jiebaPathArray...)
 
-	stopPath := GetCurrentPath() + "/data/stop.txt"
+	if stopWordPath == "" {
+		stopWordPath = GetWorkingDir() + "/dict/stop.txt"
+	}
 
-	stopStr := ReadFileString(stopPath)
+	zap.S().Infof("begin init gse StopArray with stopWordPath=%v", stopWordPath)
+	stopStr := ReadFileString(stopWordPath)
 	if stopStr != "" {
 		StopArray = strings.Split(stopStr, "\n")
 	} else {
@@ -39,6 +49,9 @@ func InitJieba() {
 			"0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z," +
 			"a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,\n,\t,\r, ,.."
 		StopArray = strings.Split(stopStr, ",")
+	}
+	return func() {
+		jieba.Free()
 	}
 }
 
@@ -76,7 +89,7 @@ func InterfaceArray2StringArray(interfaceArray []interface{}, minSegWordLen int)
 		if !ok {
 			continue
 		}
-		// skip single word like 呢 / 吧 / 做
+		// this condition is used for skipping single word like 呢 / 吧 / 做
 		if len([]rune(maybeStr)) < minSegWordLen {
 			continue
 		}

@@ -203,7 +203,7 @@ func main() {
 		if len(article.HugoJsonPost.Images) > 0 {
 			algobj.Image = article.HugoJsonPost.Images[0]
 		}
-		//mapObj := common.Struct2Map(algobj)
+		// mapObj := common.Struct2Map(algobj)
 		// fmt.Printf("Struct2Map %#v\n", mapObj)
 		mapObj := algobj.ToMap()
 
@@ -281,7 +281,7 @@ func getArticleList() []*model.Article {
 		// log.Printf("post=%#v", post)
 		post1 := post
 		pool.AddTask(func() error {
-			article := model.Article{HugoJsonPost: *post1, Content: post1.Content, Md5Value: common.Md5V(post1.Content)}
+			article := model.Article{HugoJsonPost: *post1, Md5Value: common.Md5V(post1.Content)}
 			articleList = append(articleList, &article)
 			common.ArticleMap.AddData(post1.Permalink, &article)
 			common.WaitGroup.Done()
@@ -299,10 +299,10 @@ func getArticleList() []*model.Article {
 // 多线程分词
 func SegmentsAsynchronous() error {
 	article := common.Queue.Pop().(*model.Article)
-	content := article.Content
-	mdConf := article.HugoJsonPost
+	content := article.HugoJsonPost.Content
+	title := article.HugoJsonPost.Title
 
-	segments := common.DoSegment(mdConf.Title, content)
+	segments := common.DoSegment(title, content)
 	article.Segments = &segments
 	zap.S().Infof("generate success: " + article.HugoJsonPost.Permalink)
 	common.WaitGroup.Done()

@@ -51,11 +51,11 @@ func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Ob
 	}
 	_, err := index.SetSettings(algoliasearch.Map{
 		"searchableAttributes": []string{
-			"title",
-			"keywords",
+			"unordered(title)",
+			"unordered(keywords)",
 			"unordered(description)",
-			"content",
-			"ordered(url)",
+			"unordered(content)",
+			"url", // there's no ordered
 		},
 	})
 	if err != nil {

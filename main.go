@@ -271,15 +271,20 @@ func getArticleList() []*model.Article {
 	// 创建WaitGroup（java中的countdown）
 	common.WaitGroup.Add(taskNum)
 
-	// 设置cpu并行数
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	// 创建线程池
 	pool := new(common.ThreadPool)
 	pool.Init(runtime.NumCPU(), taskNum)
 
 	for _, post := range posts {
 		// log.Printf("post=%#v", post)
+		if post.Content == "" {
+			pool.AddTask(func() error {
+				// we need this since the pool has been inited with fixed number of tasks
+				common.WaitGroup.Done()
+				return nil
+			})
+			continue
+		}
 		post1 := post
 		pool.AddTask(func() error {
 			article := model.Article{HugoJsonPost: *post1, Md5Value: common.Md5V(post1.Content)}

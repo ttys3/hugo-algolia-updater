@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -47,6 +48,18 @@ func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Ob
 	zap.S().Infof("clear index, indexName=%v appID=%v", indexName, appID)
 	if _, err := index.Clear(); err != nil {
 		return err
+	}
+	_, err := index.SetSettings(algoliasearch.Map{
+		"searchableAttributes": []string{
+			"title",
+			"keywords",
+			"unordered(description)",
+			"content",
+			"ordered(url)",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("index.SetSettings searchableAttributes failed, err=%w", err)
 	}
 	zap.S().Infof("begin add objects to index, indexName=%v appID=%v objects count=%v", indexName, appID, len(objects))
 	if _, err := index.AddObjects(objects); err != nil {

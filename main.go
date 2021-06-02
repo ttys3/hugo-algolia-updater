@@ -1,14 +1,15 @@
 package main
 
 import (
-	"hugo-algolia-updater/constant1"
-	"hugo-algolia-updater/po"
-	"hugo-algolia-updater/utils"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/algolia/algoliasearch-client-go/algoliasearch"
 	"github.com/json-iterator/go"
+	"hugo-algolia-updater/constant1"
+	"hugo-algolia-updater/po"
+	"hugo-algolia-updater/utils"
 	"io/ioutil"
 	"log"
 	"runtime"
@@ -17,7 +18,26 @@ import (
 	"time"
 )
 
+var (
+	serviceName string
+	version string
+	buildTime string
+)
+
+var showVersion bool
+
 func main() {
+	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())
+
+	flag.BoolVar(&showVersion, "v", false, "show version and exit")
+	flag.Parse()
+
+	if showVersion {
+		return
+	}
+
+	utils.InitJieba()
+
 	startTime := time.Now().UnixNano() / 1e6
 
 	//运行编译

@@ -1,6 +1,6 @@
 package common
 
-import "fmt"
+import "go.uber.org/zap"
 
 type ThreadPool struct {
 	Queue  chan func() error
@@ -12,60 +12,60 @@ type ThreadPool struct {
 }
 
 // 初始化
-func (self *ThreadPool) Init(number int, total int) {
-	self.Queue = make(chan func() error, total)
-	self.Number = number
-	self.Total = total
-	self.result = make(chan error, total)
+func (p *ThreadPool) Init(number int, total int) {
+	p.Queue = make(chan func() error, total)
+	p.Number = number
+	p.Total = total
+	p.result = make(chan error, total)
 }
 
 // 开始执行
-func (self *ThreadPool) Start() {
+func (p *ThreadPool) Start() {
 	// 开启Number个goroutine
-	for i := 0; i < self.Number; i++ {
+	for i := 0; i < p.Number; i++ {
 		go func() {
 			for {
-				task, ok := <-self.Queue
+				task, ok := <-p.Queue
 				if !ok {
 					break
 				}
 
 				err := task()
-				self.result <- err
+				p.result <- err
 			}
 		}()
 	}
 
 	// 获得每个work的执行结果
-	for j := 0; j < self.Total; j++ {
-		res, ok := <-self.result
+	for j := 0; j < p.Total; j++ {
+		res, ok := <-p.result
 		if !ok {
 			break
 		}
 
 		if res != nil {
-			fmt.Println(res)
+			zap.S().Info(res)
 		}
 	}
 
 	// 所有任务都执行完成，回调函数
-	if self.finishCallback != nil {
-		self.finishCallback()
+	if p.finishCallback != nil {
+		p.finishCallback()
 	}
 }
 
 // 停止
-func (self *ThreadPool) Stop() {
-	close(self.Queue)
-	close(self.result)
+func (p *ThreadPool) Stop() {
+	close(p.Queue)
+	close(p.result)
 }
 
 // 添加任务
-func (self *ThreadPool) AddTask(task func() error) {
-	self.Queue <- task
+func (p *ThreadPool) AddTask(task func() error) {
+	p.Queue <- task
 }
 
 // 设置结束回调
-func (self *ThreadPool) SetFinishCallback(callback func()) {
-	self.finishCallback = callback
+func (p *ThreadPool) SetFinishCallback(callback func()) {
+	p.finishCallback = callback
 }

@@ -7,17 +7,19 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+	"go.uber.org/zap"
 )
 
 // 读取文件
-func ReadFileString(path string) string {
-	bytes, _ := ioutil.ReadFile(path)
-	return string(bytes)
+func ReadFileString(p string) string {
+	b, _ := ioutil.ReadFile(p)
+	return string(b)
 }
 
 // 写入文件
 func WriteFile(path string, bytesArray []byte) {
-	ioutil.WriteFile(path, bytesArray, 0o666)
+	ioutil.WriteFile(path, bytesArray, 0o600)
 }
 
 // 判断是否存在
@@ -27,7 +29,7 @@ func Exists(path string) (bool, error) {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		fmt.Println("exists error: " + path + " not found")
+		zap.S().Error("exists error: " + path + " not found")
 		return false, nil
 	}
 	return true, err
@@ -51,6 +53,7 @@ func ExecShell(name string, arg ...string) (string, error) {
 // 获取md5
 func Md5V(str string) string {
 	data := []byte(str)
+	// nolint:gosec
 	has := md5.Sum(data)
 	md5str := fmt.Sprintf("%x", has)
 	return md5str

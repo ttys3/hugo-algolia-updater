@@ -12,25 +12,18 @@ import (
 var (
 	WaitGroup        = sync.WaitGroup{}
 	Queue            = NewQueue()
-	AlgoliasMap      = map[string]model.Algolia{}
-	CacheAlgoliasMap = map[string]model.Algolia{}
+	CacheAlgoliasMap = map[string]*model.Algolia{}
 	Md5Map           = NewConcurrentMap(make(map[string]interface{}))
 	NeedArticleList  = []*model.Article{}
-	NeedAlgoliasList = []*model.Algolia{}
 	ArticleMap       = NewConcurrentMap(make(map[string]interface{}))
 	StopArray        = []string{}
-	HtmlReg, _       = regexp.Compile("<.{0,200}?>")
-	PointReg, _      = regexp.Compile("\n|\t|\r")
-	NumberReg, _     = regexp.Compile("[0-9]+|[0-9]+\\.+[0-9]+")
+	NumberReg        = regexp.MustCompile(`\d+|\d+\.+\d+`)
 )
 
 const N int = 10
 
 type QueueNode struct {
-	digits1 [N]int
-	digits2 [N]int
-	sflag   bool
-	data    *list.List
+	data *list.List
 }
 
 var lock sync.Mutex
@@ -49,6 +42,7 @@ func (q *QueueNode) Push(v interface{}) {
 
 func (q *QueueNode) Dump() {
 	for iter := q.data.Back(); iter != nil; iter = iter.Prev() {
+		// nolint: forbidigo
 		fmt.Println("item:", iter.Value)
 	}
 }

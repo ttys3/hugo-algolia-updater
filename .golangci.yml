@@ -60,7 +60,7 @@ linters:
     ## lll Reports long lines, revive has lll feature
 #    - lll
     ## gosec	Inspects source code for security problems
-    - gosec
+#    - gosec
     ## ifshort	Checks that your code uses short syntax for if-statements whenever possible
     - ifshort
     ## importas	Enforces consistent import aliases

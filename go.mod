@@ -10,4 +10,5 @@ require (
 	github.com/go-ego/gse v0.67.0
 	github.com/json-iterator/go v1.1.11
 	github.com/yanyiwu/gojieba v1.1.2
+	go.uber.org/zap v1.17.0
 )

@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strings"
+
+	"go.uber.org/zap"
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/ttys3/hugo-algolia-updater/common"
@@ -44,7 +45,7 @@ func mergeDict(pathsWithCommaSep string, outfile string) {
 
 	}
 	slice := set.ToSlice()
-	fmt.Print(len(slice))
+	zap.S().Infof("slice len=%v", len(slice))
 	array := common.InterfaceArray2StringArray(slice, 1)
 	str := strings.Join(array, "\n")
 	common.WriteFile(outfile, []byte(str))

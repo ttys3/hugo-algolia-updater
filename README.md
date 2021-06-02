@@ -11,6 +11,35 @@ outputs:
     - JSON
  ```
 
+create `layouts/_default/index.json` under your hugo project root directory, content as below:
+
+```go
+{{- $.Scratch.Add "index" slice -}}
+{{- range .Site.RegularPages -}}
+
+    {{ $.Scratch.Delete "image" }}
+    {{- $.Scratch.Add "image" slice -}}
+    {{ with .Resources.ByType "image" }}
+        {{ range . }}
+        {{- $.Scratch.Add "image" .Permalink -}}
+        {{ end }}
+    {{ end }}
+
+    {{- $.Scratch.Add "index" (dict 
+    "title" .Title 
+    "images" ($.Scratch.Get "image") 
+    "tags" .Params.tags 
+    "categories" .Params.categories 
+    "content" .Plain 
+    "description" .Summary 
+    "permalink" .Permalink 
+    "objectID" .Permalink 
+    "date" .Lastmod 
+    "section" .Section) -}}
+
+{{- end -}}
+{{- $.Scratch.Get "index" | jsonify -}}
+```
 ## 快速开始
 
 ### 最新更新

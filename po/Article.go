@@ -1,9 +1,8 @@
 package po
 
 type Article struct {
-	Yaml        MdYaml
+	Yaml        HugoJsonPost
 	Content     string
 	Md5Value    string
-	Path        string
 	Participles *[]string
 }

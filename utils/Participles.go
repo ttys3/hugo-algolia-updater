@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"builder/constant1"
+	"hugo-algolia-updater/constant1"
 	"github.com/deckarep/golang-set"
 	"github.com/go-ego/gse"
 	"github.com/yanyiwu/gojieba"
+	"log"
 	"strings"
 	"sync/atomic"
 )
@@ -15,20 +16,13 @@ var (
 )
 
 func init() {
-	dictPath := constant1.GetCurrentPath() + "sdata/dict.txt"
-
-	if constant1.AlgoliaCongig.Participles.Dict.Path != "" {
-		dictPath = constant1.AlgoliaCongig.Participles.Dict.Path
-	}
+	dictPath := constant1.GetCurrentPath() + "/data/dict.txt"
 	seg.LoadDict(dictPath)
 
 	jiebaPathArray := strings.Split(dictPath, ",")
 	jieba = gojieba.NewJieba(jiebaPathArray...)
 
-	stopPath := constant1.GetCurrentPath() + "sdata/stop.txt"
-	if constant1.AlgoliaCongig.Participles.Dict.StopPath != "" {
-		stopPath = constant1.AlgoliaCongig.Participles.Dict.StopPath
-	}
+	stopPath := constant1.GetCurrentPath() + "/data/stop.txt"
 
 	stopStr := ReadFileString(stopPath)
 	if stopStr != "" {
@@ -39,9 +33,9 @@ func init() {
 	}
 
 }
-func Participles(title string, context string) []string {
-	jiebaArray := jieBaParticiples(context)
-	segoArray := segoParticiples(context)
+func Participles(title string, content string) []string {
+	jiebaArray := jieBaParticiples(content)
+	segoArray := segoParticiples(content)
 	jiebaSet := array2set(jiebaArray)
 	segoSet := array2set(segoArray)
 	set := segoSet.Union(jiebaSet)
@@ -50,6 +44,7 @@ func Participles(title string, context string) []string {
 	set = removeWord(set)
 	slice := set.ToSlice()
 	array := InterfaceArray2StringArray(slice)
+	log.Printf("Participles ---------> title=%s array=%s", title, array)
 	atomic.AddInt32(&constant1.Num, int32(len(array)))
 	return array
 }
@@ -67,8 +62,16 @@ func segoParticiples(context string) []string {
 //接口数组转字符串数组
 func InterfaceArray2StringArray(interfaceArray []interface{}) []string {
 	var stringArray []string
-	for _, param := range interfaceArray {
-		stringArray = append(stringArray, param.(string))
+	for _, str := range interfaceArray {
+		if maybeStr, ok := str.(string); !ok {
+			continue
+		} else {
+			// skip single word like 呢 / 吧 / 做
+			if len([]rune(maybeStr)) < 2 {
+				continue
+			}
+			stringArray = append(stringArray, maybeStr)
+		}
 	}
 	return stringArray
 }

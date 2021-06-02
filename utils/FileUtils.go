@@ -1,15 +1,12 @@
 package utils
 
 import (
-	"builder/constant1"
 	"bytes"
 	"crypto/md5"
 	"fmt"
-	"github.com/russross/blackfriday"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 //读取文件
@@ -21,23 +18,6 @@ func ReadFileString(path string) string {
 //写入文件
 func WriteFile(path string, bytesArray []byte) {
 	ioutil.WriteFile(path, bytesArray, 0666)
-}
-
-//读取md文件
-func ReadMdContext(path string) (string, string) {
-	str := ReadFileString(path)
-	str = str[4 : len(str)-1]
-	yaml := str[0:strings.Index(str, "---")]
-	var context string
-	if strings.Index(str, "---")+3 >= len(str)-1 {
-		context = ""
-	} else {
-		context = str[strings.Index(str, "---")+4 : len(str)-1]
-	}
-	context = string(blackfriday.Run([]byte(context)))
-	context = constant1.HtmlReg.ReplaceAllString(context, ".")
-	context = constant1.PointReg.ReplaceAllString(context, ".")
-	return yaml, context
 }
 
 //判断是否存在
@@ -54,9 +34,9 @@ func Exists(path string) (bool, error) {
 }
 
 //执行shell
-func ExecShell(s string) (string, error) {
+func ExecShell(name string, arg ...string) (string, error) {
 	//函数返回一个*Cmd，用于使用给出的参数执行name指定的程序
-	cmd := exec.Command(s)
+	cmd := exec.Command(name, arg...)
 
 	//读取io.Writer类型的cmd.Stdout，再通过bytes.Buffer(缓冲byte类型的缓冲器)将byte类型转化为string类型(out.String():这是bytes类型提供的接口)
 	var out bytes.Buffer
@@ -66,20 +46,6 @@ func ExecShell(s string) (string, error) {
 	err := cmd.Run()
 
 	return out.String(), err
-}
-
-//获取所有文件
-func GetAllFiles(path string, array *[]string) []string {
-	files, _ := ioutil.ReadDir(path)
-	for _, fileInfo := range files {
-		absoluteFilePath := path + "/" + fileInfo.Name()
-		info, _ := os.Stat(absoluteFilePath)
-		if info.IsDir() {
-			GetAllFiles(absoluteFilePath, array)
-		}
-		*array = append(*array, absoluteFilePath)
-	}
-	return *array
 }
 
 //获取md5

@@ -1,7 +1,7 @@
 package constant1
 
 import (
-	"hugo-algolia-updater/po"
+	"github.com/ttys3/hugo-algolia-updater/po"
 	"container/list"
 	"fmt"
 	"regexp"

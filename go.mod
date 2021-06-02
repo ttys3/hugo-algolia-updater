@@ -1,4 +1,4 @@
-module hugo-algolia-updater
+module github.com/ttys3/hugo-algolia-updater
 
 go 1.16
 

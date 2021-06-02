@@ -4,7 +4,7 @@ import (
 	"github.com/deckarep/golang-set"
 	"github.com/go-ego/gse"
 	"github.com/yanyiwu/gojieba"
-	"hugo-algolia-updater/constant1"
+	"github.com/ttys3/hugo-algolia-updater/constant1"
 	"log"
 	"strings"
 	"sync/atomic"

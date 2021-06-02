@@ -1,4 +1,4 @@
-PROJECT_NAME := $(shell grep 'module ' go.mod | awk '{print $$2}' | sed 's/github.com\///g')
+PROJECT_NAME := $(shell grep 'module ' go.mod | awk -F"/" '{print $$NF}')
 NAME := $(notdir $(PROJECT_NAME))
 NEW_NAME :=$(shell echo $(NAME) | tr '_' '-')
 NOW := $(shell date +'%Y%m%d%H%M%S')

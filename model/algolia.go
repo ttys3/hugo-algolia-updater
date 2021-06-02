@@ -1,5 +1,7 @@
 package model
 
+import "github.com/algolia/algoliasearch-client-go/algoliasearch"
+
 type Algolia struct {
 	ObjectID    string   `json:"objectID"`
 	Title       string   `json:"title"`
@@ -21,6 +23,26 @@ type Algolia struct {
 	Author     string   `json:"author"`
 	Tags       []string `json:"tags"`
 	Categories []string `json:"categories"`
+}
+
+func (a *Algolia) ToMap() algoliasearch.Object {
+	m := algoliasearch.Object{}
+	m["objectID"] = a.ObjectID
+	m["title"] = a.Title
+	m["keywords"] = a.Keywords
+	m["description"] = a.Description
+	m["content"] = a.Content
+	m["uri"] = a.Uri
+	m["lang"] = a.Lang
+	m["origin"] = a.Origin
+	m["image"] = a.Image
+	m["datePublished"] = a.DatePublished
+	m["subtitle"] = a.Subtitle
+	m["date"] = a.Date
+	m["author"] = a.Author
+	m["tags"] = a.Tags
+	m["categories"] = a.Categories
+	return m
 }
 
 // demo algolia Standard record schema from https://www.algolia.com/doc/tools/crawler/netlify-plugin/extraction-strategy/#default-schema

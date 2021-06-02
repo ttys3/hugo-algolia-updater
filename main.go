@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -68,6 +68,7 @@ func main() {
 			common.ALGOLIA_COMPLIE_JSON_PATH,
 			common.CACHE_ALGOLIA_JSON_PATH,
 			common.MD5_ALGOLIA_JSON_PATH,
+			common.HUGO_INDEX_JSON_PATH,
 		}
 		for _, f := range toClean {
 			if err := os.Remove(f); err == nil {
@@ -98,7 +99,9 @@ func main() {
 	startTime := time.Now().UnixNano() / 1e6
 
 	// 运行编译
-	execHugoBuild()
+	if err := execHugoBuild(); err != nil {
+		zap.S().Fatal(err)
+	}
 
 	segmentsStartTime := time.Now().UnixNano() / 1e6
 
@@ -159,16 +162,15 @@ func main() {
 	// 主线程阻塞
 	common.WaitGroup.Wait()
 	pool.Stop()
-	zap.S().Infof("segments success: %v ms", strconv.FormatInt((time.Now().UnixNano()/1e6)-segmentsStartTime, 10))
+	zap.S().Infof("segments success: %v ms", (time.Now().UnixNano()/1e6)-segmentsStartTime)
 
 	// 创建分词
 	algoliaStartTime := time.Now().UnixNano() / 1e6
 	for _, article := range common.NeedArticleList {
 		common.CacheAlgoliasMap[article.HugoJsonPost.Permalink] = &model.Algolia{Title: article.HugoJsonPost.Title}
-		// cacheAlgoliasList = append(cacheAlgoliasList, model.Algolia{Title: value.HugoJsonPost.Title})
 	}
 
-	objArray := []algoliasearch.Object{}
+	var objArray []algoliasearch.Object
 	for permalink, algolias := range common.CacheAlgoliasMap {
 
 		value := common.ArticleMap.GetValue(permalink)
@@ -181,8 +183,29 @@ func main() {
 		}
 		common.Md5Map.AddData(permalink, article.Md5Value)
 
-		mapObj := common.Struct2Map(article.HugoJsonPost)
+		algobj := model.Algolia{
+			ObjectID:      article.HugoJsonPost.Permalink,
+			Title:         article.HugoJsonPost.Title,
+			Keywords:      article.HugoJsonPost.Tags,
+			Description:   article.HugoJsonPost.Description,
+			Content:       article.HugoJsonPost.Content,
+			Uri:           "",
+			Lang:          "en",
+			Origin:        "",
+			Image:         "",
+			DatePublished: article.HugoJsonPost.Date.Unix(),
+			Subtitle:      "",
+			Date:          article.HugoJsonPost.Date.String(),
+			Author:        "",
+			Tags:          article.HugoJsonPost.Tags,
+			Categories:    article.HugoJsonPost.Categories,
+		}
+		if len(article.HugoJsonPost.Images) > 0 {
+			algobj.Image = article.HugoJsonPost.Images[0]
+		}
+		//mapObj := common.Struct2Map(algobj)
 		// fmt.Printf("Struct2Map %#v\n", mapObj)
+		mapObj := algobj.ToMap()
 
 		if article.Segments != nil {
 			segmentsArray := *article.Segments
@@ -200,11 +223,13 @@ func main() {
 			mapObj["content"] = algolias.Content
 		}
 		mapObj["objectID"] = article.HugoJsonPost.Permalink
-		mapObj["uri"] = article.HugoJsonPost.Permalink
+		if u, err := url.Parse(article.HugoJsonPost.Permalink); err == nil {
+			mapObj["uri"] = u.RequestURI()
+		}
 
 		objArray = append(objArray, mapObj)
 	}
-	zap.S().Infof("generate algolia index success: %v ms", strconv.FormatInt((time.Now().UnixNano()/1e6)-algoliaStartTime, 10))
+	zap.S().Infof("generate algolia index success: %v ms", (time.Now().UnixNano()/1e6)-algoliaStartTime)
 	zap.S().Infof("generate algolia index num: %v", common.Num)
 
 	uploadStartTime := time.Now().UnixNano() / 1e6
@@ -224,12 +249,12 @@ func main() {
 	common.WriteFile(common.CACHE_ALGOLIA_JSON_PATH, algoliaBytes)
 	common.WriteFile(common.MD5_ALGOLIA_JSON_PATH, md5Bytes)
 
-	zap.S().Infof("save cache success: %v ms", strconv.FormatInt((time.Now().UnixNano()/1e6)-saveStartTime, 10))
-	zap.S().Infof("total : %v ms", strconv.FormatInt((time.Now().UnixNano()/1e6)-startTime, 10))
+	zap.S().Infof("save cache success: %v ms", (time.Now().UnixNano()/1e6)-saveStartTime)
+	zap.S().Infof("total : %v ms", (time.Now().UnixNano()/1e6)-startTime)
 }
 
 func getArticleList() []*model.Article {
-	hugoJsonFile := "public/index.json"
+	hugoJsonFile := common.HUGO_INDEX_JSON_PATH
 	c, err := ioutil.ReadFile(hugoJsonFile)
 	if err != nil {
 		panic(err)
@@ -256,7 +281,7 @@ func getArticleList() []*model.Article {
 		// log.Printf("post=%#v", post)
 		post1 := post
 		pool.AddTask(func() error {
-			article := model.Article{HugoJsonPost: *post1, Content: post1.Contents, Md5Value: common.Md5V(post1.Contents)}
+			article := model.Article{HugoJsonPost: *post1, Content: post1.Content, Md5Value: common.Md5V(post1.Content)}
 			articleList = append(articleList, &article)
 			common.ArticleMap.AddData(post1.Permalink, &article)
 			common.WaitGroup.Done()
@@ -285,9 +310,13 @@ func SegmentsAsynchronous() error {
 }
 
 // 执行编译
-func execHugoBuild() {
-	out, _ := common.ExecShell("hugo", "--gc", "--minify", "--enableGitInfo")
+func execHugoBuild() error {
+	out, err := common.ExecShell("hugo", "--gc", "--enableGitInfo")
+	if err != nil {
+		return err
+	}
 	zap.S().Info(out)
+	return nil
 }
 
 func getCacheAlgoliasList() []*model.Algolia {

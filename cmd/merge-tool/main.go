@@ -3,14 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/deckarep/golang-set"
-	"github.com/ttys3/hugo-algolia-updater/common"
 	"os"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set"
+	"github.com/ttys3/hugo-algolia-updater/common"
 )
 
-var pathsWithCommaSep string
-var outfile string
+var (
+	pathsWithCommaSep string
+	outfile           string
+)
 
 func main() {
 	flag.StringVar(&pathsWithCommaSep, "f", "", "files with comma separated to merge")
@@ -21,7 +24,8 @@ func main() {
 		os.Exit(-1)
 	}
 
-	// example dict  "/github.com/go-ego/gse/data/dict/dictionary.txt,/github.com/go-ego/gse/data/dict/zh/dict.txt,/github.com/yanyiwu/gojieba/dict/jieba.dict.utf8"
+	// example dict  "/github.com/go-ego/gse/data/dict/dictionary.txt,/github.com/go-ego/gse/data/dict/zh/dict.txt,
+	// github.com/yanyiwu/gojieba/dict/jieba.dict.utf8"
 	// example stop words "/github.com/yanyiwu/gojieba/dict/stop_words.utf8,/Hugo/Naah-Blog/stop.txt"
 	mergeDict(pathsWithCommaSep, outfile)
 }

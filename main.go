@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/algoliasearch"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/ttys3/hugo-algolia-updater/common"
 	"github.com/ttys3/hugo-algolia-updater/model"
 )
@@ -150,7 +150,6 @@ func main() {
 	fmt.Println("generate algolia index success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-algoliaStartTime, 10) + " ms")
 	fmt.Println("generate algolia index num: ", common.Num)
 
-	return
 	uploadStartTime := time.Now().UnixNano() / 1e6
 	// 更新分词
 	common.UpdateAlgolia(objArray)

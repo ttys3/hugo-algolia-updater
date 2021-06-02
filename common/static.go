@@ -27,7 +27,6 @@ var (
 const N int = 10
 
 type QueueNode struct {
-	figure  int
 	digits1 [N]int
 	digits2 [N]int
 	sflag   bool

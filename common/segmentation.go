@@ -43,7 +43,7 @@ func Participles(title string, content string) []string {
 
 	set = removeWord(set)
 	slice := set.ToSlice()
-	array := InterfaceArray2StringArray(slice)
+	array := InterfaceArray2StringArray(slice, 2)
 	log.Printf("Participles ---------> title=%s array=%s", title, array)
 	atomic.AddInt32(&Num, int32(len(array)))
 	return array
@@ -60,14 +60,14 @@ func segoParticiples(context string) []string {
 }
 
 // 接口数组转字符串数组
-func InterfaceArray2StringArray(interfaceArray []interface{}) []string {
+func InterfaceArray2StringArray(interfaceArray []interface{}, minSegWordLen int) []string {
 	var stringArray []string
 	for _, str := range interfaceArray {
 		if maybeStr, ok := str.(string); !ok {
 			continue
 		} else {
 			// skip single word like 呢 / 吧 / 做
-			if len([]rune(maybeStr)) < 2 {
+			if len([]rune(maybeStr)) < minSegWordLen {
 				continue
 			}
 			stringArray = append(stringArray, maybeStr)

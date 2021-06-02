@@ -15,14 +15,11 @@ binary: export CGO_ENABLED=1
 binary:
 	@echo "\n###### building $(NAME)"
 	@go env | grep -E $(IMPORTANT_GO_ENV_VARS)
-	go build -ldflags="$(LD_FLAGS)" -o $(NAME)
+	go build -o $(NAME) -ldflags="$(LD_FLAGS)"
 
-.PHONY: tar
-tar: build/binary
-	@mv $(NAME) $(NAME)_$(NOW)
-	@ln -sf $(NAME)_$(NOW) $(NAME) && \
-		tar -zcf $(NAME).tar.gz $(NAME)_$(NOW) $(NAME) && \
-		rm $(NAME) $(NAME)_$(NOW)
+.PHONY: merge-tool
+merge-tool:
+	go build -o merge-tool -ldflags="$(LD_FLAGS)" ./cmd/merge-tool
 
 .PHONY: debug
 debug:

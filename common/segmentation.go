@@ -1,7 +1,6 @@
 package common
 
 import (
-	"log"
 	"strings"
 	"sync/atomic"
 
@@ -66,7 +65,7 @@ func DoSegment(title string, content string) []string {
 	set = removeWord(set)
 	slice := set.ToSlice()
 	array := InterfaceArray2StringArray(slice, 2)
-	log.Printf("DoSegment ---------> title=%s array=%s", title, array)
+	zap.S().Infof("DoSegment ---------> title=%s", title)
 	atomic.AddInt32(&Num, int32(len(array)))
 	return array
 }

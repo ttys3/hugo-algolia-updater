@@ -32,7 +32,7 @@ func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Ob
 	client := algoliasearch.NewClient(appID, adminKey)
 	if HttpProxy != "" {
 		proxy := func(_ *http.Request) (*url.URL, error) {
-			return url.Parse("http://127.0.0.1:1087")
+			return url.Parse(HttpProxy)
 			// return url.Parse("ss://rc4-md5:123456@ss.server.com:1080")
 		}
 		tr := &http.Transport{Proxy: proxy}
@@ -43,13 +43,15 @@ func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Ob
 	}
 
 	zap.S().Infof("begin re-index, indexName=%v appID=%v", indexName, appID)
-
 	index := client.InitIndex(indexName)
+	zap.S().Infof("clear index, indexName=%v appID=%v", indexName, appID)
 	if _, err := index.Clear(); err != nil {
 		return err
 	}
+	zap.S().Infof("begin add objects to index, indexName=%v appID=%v objects count=%v", indexName, appID, len(objects))
 	if _, err := index.AddObjects(objects); err != nil {
 		return err
 	}
+	zap.S().Infof("done add objects to index, indexName=%v appID=%v objects count=%v", indexName, appID, len(objects))
 	return nil
 }

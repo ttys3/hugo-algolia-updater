@@ -183,13 +183,17 @@ func main() {
 		}
 		common.Md5Map.AddData(permalink, article.Md5Value)
 
+		theURL := ""
+		if u, err := url.Parse(article.HugoJsonPost.Permalink); err == nil {
+			theURL = u.RequestURI()
+		}
 		algobj := model.Algolia{
 			ObjectID:      article.HugoJsonPost.Permalink,
 			Title:         article.HugoJsonPost.Title,
 			Keywords:      article.HugoJsonPost.Tags,
 			Description:   article.HugoJsonPost.Description,
 			Content:       article.HugoJsonPost.Content,
-			Uri:           "",
+			URL:           theURL,
 			Lang:          "en",
 			Origin:        "",
 			Image:         "",
@@ -223,9 +227,6 @@ func main() {
 			mapObj["content"] = algolias.Content
 		}
 		mapObj["objectID"] = article.HugoJsonPost.Permalink
-		if u, err := url.Parse(article.HugoJsonPost.Permalink); err == nil {
-			mapObj["uri"] = u.RequestURI()
-		}
 
 		objArray = append(objArray, mapObj)
 	}
@@ -327,7 +328,7 @@ func getCacheAlgoliasList() []*model.Algolia {
 		cacheAlgiliasArray = getAlgiliasJsonArray(jsonString)
 		for _, algolias := range cacheAlgiliasArray {
 			algolias1 := algolias
-			common.CacheAlgoliasMap[algolias.Uri] = algolias1
+			common.CacheAlgoliasMap[algolias.ObjectID] = algolias1
 		}
 	}
 	return cacheAlgiliasArray

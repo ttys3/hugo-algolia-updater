@@ -8,8 +8,8 @@ type Algolia struct {
 	Keywords    []string `json:"keywords"`
 	Description string   `json:"description"`
 	Content     string   `json:"content"`
-	// uri seems the same as pathname
-	Uri string `json:"uri"`
+	// url seems the same as pathname
+	URL string `json:"url"`
 	// Pathname    string `json:"pathname"`
 	// UrlDepth    int		 `json:"urlDepth"`
 	// Position int `json:"position"`
@@ -32,7 +32,7 @@ func (a *Algolia) ToMap() algoliasearch.Object {
 	m["keywords"] = a.Keywords
 	m["description"] = a.Description
 	m["content"] = a.Content
-	m["uri"] = a.Uri
+	m["url"] = a.URL
 	m["lang"] = a.Lang
 	m["origin"] = a.Origin
 	m["image"] = a.Image

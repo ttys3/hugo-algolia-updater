@@ -1,8 +1,8 @@
-package utils
+package merge
 
 //
 //import (
-//	"builder/constant1"
+//	"builder/common"
 //	"fmt"
 //	"github.com/deckarep/golang-set"
 //	"strings"
@@ -23,7 +23,7 @@ package utils
 //		sa := strings.Split(s, "\r\n")
 //		for index2 := range sa {
 //			set.Add(sa[index2])
-//			constant1.Num++
+//			common.Num++
 //		}
 //
 //	}
@@ -43,7 +43,7 @@ package utils
 //		sa := strings.Split(s, "\r\n")
 //		for index2 := range sa {
 //			set.Add(sa[index2])
-//			constant1.Num++
+//			common.Num++
 //		}
 //
 //	}

@@ -1,4 +1,4 @@
-package po
+package model
 
 type Algolia struct {
 	Title       string   `json:"title"`

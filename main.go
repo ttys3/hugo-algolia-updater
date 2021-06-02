@@ -14,9 +14,8 @@ import (
 
 	"github.com/algolia/algoliasearch-client-go/algoliasearch"
 	"github.com/json-iterator/go"
-	"github.com/ttys3/hugo-algolia-updater/constant1"
-	"github.com/ttys3/hugo-algolia-updater/po"
-	"github.com/ttys3/hugo-algolia-updater/utils"
+	"github.com/ttys3/hugo-algolia-updater/common"
+	"github.com/ttys3/hugo-algolia-updater/model"
 )
 
 var (
@@ -37,7 +36,7 @@ func main() {
 		return
 	}
 
-	utils.InitJieba()
+	common.InitJieba()
 
 	startTime := time.Now().UnixNano() / 1e6
 
@@ -54,24 +53,24 @@ func main() {
 	flag := true
 	// 有缓存时
 	if len(cacheAlgoliasList) != 0 {
-		exists, _ := utils.Exists(constant1.MD5_ALGOLIA_JSON_PATH)
+		exists, _ := common.Exists(common.MD5_ALGOLIA_JSON_PATH)
 		if exists {
 			flag = false
 			// 有md5map
-			constant1.Md5Map = po.NewConcurrentMap(getMd5Map())
+			common.Md5Map = common.NewConcurrentMap(getMd5Map())
 
 			for _, article := range articleList {
 				sss := article
-				permalink := sss.Yaml.Permalink
-				value := constant1.Md5Map.GetValue(permalink)
+				permalink := sss.HugoJsonPost.Permalink
+				value := common.Md5Map.GetValue(permalink)
 				oldMd5 := ""
 				if value != nil {
 					oldMd5 = value.(string)
 				}
 				compare := strings.Compare(oldMd5, sss.Md5Value)
 				if compare != 0 {
-					constant1.Queue.Push(sss)
-					constant1.NeedArticleList = append(constant1.NeedArticleList, sss)
+					common.Queue.Push(sss)
+					common.NeedArticleList = append(common.NeedArticleList, sss)
 					taskNum++
 				}
 			}
@@ -81,17 +80,17 @@ func main() {
 	// 没缓存时
 	if flag {
 		for _, article := range articleList {
-			constant1.Queue.Push(article)
-			constant1.NeedArticleList = append(constant1.NeedArticleList, article)
+			common.Queue.Push(article)
+			common.NeedArticleList = append(common.NeedArticleList, article)
 			taskNum++
 		}
 	}
 
 	// 创建WaitGroup（java中的countdown）
-	constant1.WaitGroup.Add(taskNum)
+	common.WaitGroup.Add(taskNum)
 
 	// 创建线程池
-	pool := new(utils.ThreadPool)
+	pool := new(common.ThreadPool)
 	pool.Init(runtime.NumCPU(), taskNum)
 
 	// 循环添加任务
@@ -101,38 +100,38 @@ func main() {
 	pool.Start()
 
 	// 主线程阻塞
-	constant1.WaitGroup.Wait()
+	common.WaitGroup.Wait()
 	pool.Stop()
 	fmt.Println("participles success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-participlesStartTime, 10) + " ms")
 
 	// 创建分词
 	algoliaStartTime := time.Now().UnixNano() / 1e6
-	for _, article := range constant1.NeedArticleList {
-		constant1.CacheAlgoliasMap[article.Yaml.Permalink] = po.Algolia{Title: article.Yaml.Title}
-		// cacheAlgoliasList = append(cacheAlgoliasList, po.Algolia{Title: value.Yaml.Title})
+	for _, article := range common.NeedArticleList {
+		common.CacheAlgoliasMap[article.HugoJsonPost.Permalink] = model.Algolia{Title: article.HugoJsonPost.Title}
+		// cacheAlgoliasList = append(cacheAlgoliasList, model.Algolia{Title: value.HugoJsonPost.Title})
 	}
 
 	objArray := []algoliasearch.Object{}
-	for permalink, algolias := range constant1.CacheAlgoliasMap {
+	for permalink, algolias := range common.CacheAlgoliasMap {
 
-		value := constant1.ArticleMap.GetValue(permalink)
-		var article *po.Article
+		value := common.ArticleMap.GetValue(permalink)
+		var article *model.Article
 		if value != nil {
-			article = value.(*po.Article)
+			article = value.(*model.Article)
 		} else {
 			log.Printf("ArticleMap.GetValue failed, permalink=%v\n", permalink)
 			continue
 		}
-		constant1.Md5Map.AddData(permalink, article.Md5Value)
+		common.Md5Map.AddData(permalink, article.Md5Value)
 
-		mapObj := utils.Struct2Map(article.Yaml)
+		mapObj := common.Struct2Map(article.HugoJsonPost)
 		// fmt.Printf("Struct2Map %#v\n", mapObj)
 
 		if article.Participles != nil {
 			participlesArray := *article.Participles
 			var buffer bytes.Buffer
 			for _, str := range participlesArray {
-				if constant1.NumberReg.Match([]byte(str)) {
+				if common.NumberReg.Match([]byte(str)) {
 					continue
 				}
 				buffer.WriteString(str)
@@ -143,115 +142,115 @@ func main() {
 		} else {
 			mapObj["content"] = algolias.Content
 		}
-		mapObj["objectID"] = article.Yaml.Permalink
-		mapObj["uri"] = article.Yaml.Permalink
+		mapObj["objectID"] = article.HugoJsonPost.Permalink
+		mapObj["uri"] = article.HugoJsonPost.Permalink
 
 		objArray = append(objArray, mapObj)
 	}
 	fmt.Println("generate algolia index success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-algoliaStartTime, 10) + " ms")
-	fmt.Println("generate algolia index num: ", constant1.Num)
+	fmt.Println("generate algolia index num: ", common.Num)
 
 	return
 	uploadStartTime := time.Now().UnixNano() / 1e6
 	// 更新分词
-	utils.UpdateAlgolia(objArray)
+	common.UpdateAlgolia(objArray)
 	fmt.Println("update algolia success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-uploadStartTime, 10) + " ms")
 	saveStartTime := time.Now().UnixNano() / 1e6
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	algoliaBytes, _ := json.Marshal(objArray)
-	md5Bytes, _ := json.Marshal(constant1.Md5Map.GetData())
-	utils.WriteFile(constant1.ALGOLIA_COMPLIE_JSON_PATH, algoliaBytes)
-	utils.WriteFile(constant1.CACHE_ALGOLIA_JSON_PATH, algoliaBytes)
-	utils.WriteFile(constant1.MD5_ALGOLIA_JSON_PATH, md5Bytes)
+	md5Bytes, _ := json.Marshal(common.Md5Map.GetData())
+	common.WriteFile(common.ALGOLIA_COMPLIE_JSON_PATH, algoliaBytes)
+	common.WriteFile(common.CACHE_ALGOLIA_JSON_PATH, algoliaBytes)
+	common.WriteFile(common.MD5_ALGOLIA_JSON_PATH, md5Bytes)
 
 	fmt.Println("save cache success: " + strconv.FormatInt((time.Now().UnixNano()/1e6)-saveStartTime, 10) + " ms")
 	fmt.Println("total : " + strconv.FormatInt((time.Now().UnixNano()/1e6)-startTime, 10) + " ms")
 }
 
-func getArticleList() []*po.Article {
+func getArticleList() []*model.Article {
 	hugoJsonFile := "public/index.json"
 	c, err := ioutil.ReadFile(hugoJsonFile)
 	if err != nil {
 		panic(err)
 	}
-	var posts []*po.HugoJsonPost
+	var posts []*model.HugoJsonPost
 	if err := json.Unmarshal(c, &posts); err != nil {
 		panic(err)
 	}
 
-	var articleList []*po.Article
+	var articleList []*model.Article
 	taskNum := len(posts)
 	// 创建WaitGroup（java中的countdown）
-	constant1.WaitGroup.Add(taskNum)
+	common.WaitGroup.Add(taskNum)
 
 	// 设置cpu并行数
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// 创建线程池
-	pool := new(utils.ThreadPool)
+	pool := new(common.ThreadPool)
 	pool.Init(runtime.NumCPU(), taskNum)
 
 	for _, post := range posts {
 		// log.Printf("post=%#v", post)
 		post1 := post
 		pool.AddTask(func() error {
-			article := po.Article{Yaml: *post1, Content: post1.Contents, Md5Value: utils.Md5V(post1.Contents)}
+			article := model.Article{HugoJsonPost: *post1, Content: post1.Contents, Md5Value: common.Md5V(post1.Contents)}
 			articleList = append(articleList, &article)
-			constant1.ArticleMap.AddData(post1.Permalink, &article)
-			constant1.WaitGroup.Done()
+			common.ArticleMap.AddData(post1.Permalink, &article)
+			common.WaitGroup.Done()
 			return nil
 		})
 	}
 
 	pool.Start()
 	// 主线程阻塞
-	constant1.WaitGroup.Wait()
+	common.WaitGroup.Wait()
 	pool.Stop()
 	return articleList
 }
 
 // 多线程分词
 func ParticiplesAsynchronous() error {
-	article := constant1.Queue.Pop().(*po.Article)
+	article := common.Queue.Pop().(*model.Article)
 	content := article.Content
-	mdConf := article.Yaml
+	mdConf := article.HugoJsonPost
 
-	participles := utils.Participles(mdConf.Title, content)
+	participles := common.Participles(mdConf.Title, content)
 	article.Participles = &participles
-	fmt.Println("generate success: " + article.Yaml.Permalink)
-	constant1.WaitGroup.Done()
+	fmt.Println("generate success: " + article.HugoJsonPost.Permalink)
+	common.WaitGroup.Done()
 	return nil
 }
 
 // 执行编译
 func execHugoBuild() {
-	out, _ := utils.ExecShell("hugo", "--gc", "--minify", "--enableGitInfo")
+	out, _ := common.ExecShell("hugo", "--gc", "--minify", "--enableGitInfo")
 	fmt.Print(out)
 }
 
-func getCacheAlgoliasList() []po.Algolia {
-	res, _ := utils.Exists(constant1.CACHE_ALGOLIA_JSON_PATH)
-	cacheAlgiliasArray := []po.Algolia{}
+func getCacheAlgoliasList() []model.Algolia {
+	res, _ := common.Exists(common.CACHE_ALGOLIA_JSON_PATH)
+	cacheAlgiliasArray := []model.Algolia{}
 	if res {
-		jsonString := utils.ReadFileString(constant1.CACHE_ALGOLIA_JSON_PATH)
+		jsonString := common.ReadFileString(common.CACHE_ALGOLIA_JSON_PATH)
 		cacheAlgiliasArray = getAlgiliasJsonArray(jsonString)
 		for _, algolias := range cacheAlgiliasArray {
-			constant1.CacheAlgoliasMap[algolias.Uri] = algolias
+			common.CacheAlgoliasMap[algolias.Uri] = algolias
 		}
 	}
 	return cacheAlgiliasArray
 }
 
-func getAlgiliasJsonArray(jsonString string) []po.Algolia {
+func getAlgiliasJsonArray(jsonString string) []model.Algolia {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	var array []po.Algolia
+	var array []model.Algolia
 	json.Unmarshal([]byte(jsonString), &array)
 
 	return array
 }
 
 func getMd5Map() map[string]interface{} {
-	md5Json := utils.ReadFileString(constant1.MD5_ALGOLIA_JSON_PATH)
+	md5Json := common.ReadFileString(common.MD5_ALGOLIA_JSON_PATH)
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	var md5Map map[string]interface{}
 	json.Unmarshal([]byte(md5Json), &md5Map)

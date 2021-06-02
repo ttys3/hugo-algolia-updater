@@ -1,4 +1,4 @@
-package po
+package config
 
 type ConfigYaml struct {
 	Algolia struct {

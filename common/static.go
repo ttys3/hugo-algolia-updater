@@ -1,4 +1,4 @@
-package constant1
+package common
 
 import (
 	"container/list"
@@ -6,18 +6,18 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/ttys3/hugo-algolia-updater/po"
+	"github.com/ttys3/hugo-algolia-updater/model"
 )
 
 var (
 	WaitGroup        = sync.WaitGroup{}
 	Queue            = NewQueue()
-	AlgoliasMap      = map[string]po.Algolia{}
-	CacheAlgoliasMap = map[string]po.Algolia{}
-	Md5Map           = po.NewConcurrentMap(make(map[string]interface{}))
-	NeedArticleList  = []*po.Article{}
-	NeedAlgoliasList = []*po.Algolia{}
-	ArticleMap       = po.NewConcurrentMap(make(map[string]interface{}))
+	AlgoliasMap      = map[string]model.Algolia{}
+	CacheAlgoliasMap = map[string]model.Algolia{}
+	Md5Map           = NewConcurrentMap(make(map[string]interface{}))
+	NeedArticleList  = []*model.Article{}
+	NeedAlgoliasList = []*model.Algolia{}
+	ArticleMap       = NewConcurrentMap(make(map[string]interface{}))
 	StopArray        = []string{}
 	HtmlReg, _       = regexp.Compile("<.{0,200}?>")
 	PointReg, _      = regexp.Compile("\n|\t|\r")

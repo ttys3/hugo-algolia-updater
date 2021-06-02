@@ -7,10 +7,10 @@ algolia:
 
 #字典和停用词位置
 #使用data目录会让hugo命令报错
-participles:
+segmentation:
   dict:
-    path: "sdata/dict.txt"
-    stop-path: "sdata/stop.txt"
+    path: "data/dict.txt"
+    stop-path: "data/stop.txt"
 
 #配置http代理(可选)
 #http:

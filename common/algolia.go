@@ -49,6 +49,8 @@ func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Ob
 	if _, err := index.Clear(); err != nil {
 		return err
 	}
+
+	// see https://www.algolia.com/doc/api-reference/api-parameters/searchableAttributes/
 	_, err := index.SetSettings(algoliasearch.Map{
 		"searchableAttributes": []string{
 			"unordered(title)",

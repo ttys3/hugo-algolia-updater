@@ -21,18 +21,18 @@ func InitJieba(dictPath, stopWordPath string) func() {
 		dictPath = GetWorkingDir() + "/dict/dict.txt"
 	}
 
-	zap.S().Infof("begin init gse segment with dict=%v", dictPath)
+	zap.S().Debugf("begin init gse segment with dict=%v", dictPath)
 	seg.LoadDict(dictPath)
 
 	jiebaPathArray := strings.Split(dictPath, ",")
-	zap.S().Infof("begin init jieba segment with dict=%v", jiebaPathArray)
+	zap.S().Debugf("begin init jieba segment with dict=%v", jiebaPathArray)
 	jieba = gojieba.NewJieba(jiebaPathArray...)
 
 	if stopWordPath == "" {
 		stopWordPath = GetWorkingDir() + "/dict/stop.txt"
 	}
 
-	zap.S().Infof("begin init gse StopArray with stopWordPath=%v", stopWordPath)
+	zap.S().Debugf("begin init gse StopArray with stopWordPath=%v", stopWordPath)
 	stopStr := ReadFileString(stopWordPath)
 	if stopStr != "" {
 		StopArray = strings.Split(stopStr, "\n")
@@ -65,7 +65,7 @@ func DoSegment(title string, content string) []string {
 	set = removeWord(set)
 	slice := set.ToSlice()
 	array := InterfaceArray2StringArray(slice, 2)
-	zap.S().Infof("DoSegment ---------> title=%s", title)
+	zap.S().Debugf("DoSegment ---------> title=%s", title)
 	atomic.AddInt32(&Num, int32(len(array)))
 	return array
 }

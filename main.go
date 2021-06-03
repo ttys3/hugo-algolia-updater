@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap/zapcore"
+
 	"github.com/ttys3/hugo-algolia-updater/config"
 
 	"go.uber.org/zap"
@@ -32,15 +34,45 @@ const DftConfigFile = "config.yaml"
 var (
 	showVersion        bool
 	cleanGeneratedJson bool
+	showDebugLog       bool
 	configFile         string
 )
 
 func main() {
+	// nolint: forbidigo
+	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())
+
+	flag.BoolVar(&showVersion, "v", false, "show version and exit")
+	flag.BoolVar(&cleanGeneratedJson, "clean", false, "clean generated json files")
+	flag.BoolVar(&showDebugLog, "debug", false, "show debug level log")
+	flag.StringVar(&configFile, "c", DftConfigFile, "config file path, if not specified, use config.yaml under current working dir")
+	flag.Parse()
+
+	if showVersion {
+		return
+	}
+
 	// init logger
 	// https://github.com/uber-go/zap/issues/717#issuecomment-496612544
 	// The default global logger used by zap.L() and zap.S() is a no-op logger.
 	// To configure the global loggers, you must use ReplaceGlobals.
-	logger, err := zap.NewDevelopment()
+	logLevel := zap.InfoLevel
+	if showDebugLog {
+		logLevel = zap.DebugLevel
+	}
+	zapCfg := zap.Config{
+		Level:            zap.NewAtomicLevelAt(logLevel),
+		Development:      false,
+		Encoding:         "console",
+		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	if !showDebugLog {
+		zapCfg.EncoderConfig.EncodeCaller = nil
+	}
+	logger, err := zapCfg.Build()
 	if err != nil {
 		panic(err)
 	}
@@ -48,18 +80,6 @@ func main() {
 
 	undo := zap.ReplaceGlobals(logger)
 	defer undo()
-
-	// nolint: forbidigo
-	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())
-
-	flag.BoolVar(&showVersion, "v", false, "show version and exit")
-	flag.BoolVar(&cleanGeneratedJson, "clean", false, "clean generated json files")
-	flag.StringVar(&configFile, "c", DftConfigFile, "config file path, if not specified, use config.yaml under current working dir")
-	flag.Parse()
-
-	if showVersion {
-		return
-	}
 
 	if cleanGeneratedJson {
 		toClean := []string{
@@ -89,7 +109,7 @@ func main() {
 		zap.S().Fatal(err)
 	}
 
-	zap.S().Infof("loaded config: %v", config.Cfg)
+	zap.S().Debugf("loaded config: %v", config.Cfg)
 
 	jiebaShutdown := common.InitJieba(config.Cfg.AlgoliaUpdater.Segment.Dict.Path, config.Cfg.AlgoliaUpdater.Segment.Dict.StopPath)
 	defer jiebaShutdown()
@@ -306,7 +326,7 @@ func SegmentsAsynchronous() error {
 
 	segments := common.DoSegment(title, content)
 	article.Segments = &segments
-	zap.S().Infof("generate success: " + article.HugoJsonPost.Permalink)
+	zap.S().Debugf("generate success: " + article.HugoJsonPost.Permalink)
 	common.WaitGroup.Done()
 	return nil
 }

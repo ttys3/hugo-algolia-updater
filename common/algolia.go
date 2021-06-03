@@ -2,19 +2,18 @@ package common
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
+	"time"
 
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
+	"github.com/ttys3/hugo-algolia-updater/model"
 	"go.uber.org/zap"
 
-	"github.com/algolia/algoliasearch-client-go/algoliasearch"
+	algoliasearch "github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 )
 
-var HttpProxy = ""
-
-// 更新分词
-func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Object) error {
+// UpdateAlgolia 清除索引并重新添加索引数据
+func UpdateAlgolia(indexName, appID, adminKey string, objects []*model.Algolia) error {
 	// allow override from env vars
 	if id := os.Getenv("ALG_APP_ID"); id != "" {
 		appID = id
@@ -30,41 +29,37 @@ func UpdateAlgolia(indexName, appID, adminKey string, objects []algoliasearch.Ob
 		zap.S().Infof("override indexName from env var, indexName=%v", indexName)
 	}
 
-	client := algoliasearch.NewClient(appID, adminKey)
-	if HttpProxy != "" {
-		proxy := func(_ *http.Request) (*url.URL, error) {
-			return url.Parse(HttpProxy)
-			// return url.Parse("ss://rc4-md5:123456@ss.server.com:1080")
-		}
-		tr := &http.Transport{Proxy: proxy}
-		httpclient := &http.Client{
-			Transport: tr,
-		}
-		client.SetHTTPClient(httpclient)
-	}
+	// https://www.algolia.com/doc/api-client/getting-started/upgrade-guides/go/#upgrade-from-v2-to-v3
+	// algolia proxy using go standard lib env var HTTP_PROXY or HTTPS_PROXY via http.ProxyFromEnvironment
+	client := algoliasearch.NewClientWithConfig(algoliasearch.Configuration{
+		AppID:        appID,            // Mandatory
+		APIKey:       adminKey,         // Mandatory
+		ReadTimeout:  5 * time.Second,  // Optional
+		WriteTimeout: 10 * time.Second, // Optional
+	})
 
 	zap.S().Infof("begin re-index, indexName=%v appID=%v", indexName, appID)
 	index := client.InitIndex(indexName)
 	zap.S().Infof("clear index, indexName=%v appID=%v", indexName, appID)
-	if _, err := index.Clear(); err != nil {
+	if _, err := index.ClearObjects(); err != nil {
 		return err
 	}
 
 	// see https://www.algolia.com/doc/api-reference/api-parameters/searchableAttributes/
-	_, err := index.SetSettings(algoliasearch.Map{
-		"searchableAttributes": []string{
+	_, err := index.SetSettings(algoliasearch.Settings{
+		SearchableAttributes: opt.SearchableAttributes(
 			"unordered(title)",
 			"unordered(keywords)",
 			"unordered(description)",
 			"unordered(content)",
 			"url", // there's no ordered
-		},
+		),
 	})
 	if err != nil {
 		return fmt.Errorf("index.SetSettings searchableAttributes failed, err=%w", err)
 	}
 	zap.S().Infof("begin add objects to index, indexName=%v appID=%v objects count=%v", indexName, appID, len(objects))
-	if _, err := index.AddObjects(objects); err != nil {
+	if _, err := index.SaveObjects(objects); err != nil {
 		return err
 	}
 	zap.S().Infof("done add objects to index, indexName=%v appID=%v objects count=%v", indexName, appID, len(objects))

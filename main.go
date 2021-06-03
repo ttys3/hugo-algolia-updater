@@ -16,7 +16,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/algolia/algoliasearch-client-go/algoliasearch"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/ttys3/hugo-algolia-updater/common"
 	"github.com/ttys3/hugo-algolia-updater/model"
@@ -170,8 +169,8 @@ func main() {
 		common.CacheAlgoliasMap[article.HugoJsonPost.Permalink] = &model.Algolia{Title: article.HugoJsonPost.Title}
 	}
 
-	var objArray []algoliasearch.Object
-	for permalink, algolias := range common.CacheAlgoliasMap {
+	var objArray []*model.Algolia
+	for permalink := range common.CacheAlgoliasMap {
 
 		value := common.ArticleMap.GetValue(permalink)
 		var article *model.Article
@@ -207,9 +206,6 @@ func main() {
 		if len(article.HugoJsonPost.Images) > 0 {
 			algobj.Image = article.HugoJsonPost.Images[0]
 		}
-		// mapObj := common.Struct2Map(algobj)
-		// fmt.Printf("Struct2Map %#v\n", mapObj)
-		mapObj := algobj.ToMap()
 
 		if article.Segments != nil {
 			segmentsArray := *article.Segments
@@ -222,13 +218,9 @@ func main() {
 				buffer.WriteString(" ")
 			}
 			join := buffer.String()
-			mapObj["content"] = join
-		} else {
-			mapObj["content"] = algolias.Content
+			algobj.Content = join
 		}
-		mapObj["objectID"] = article.HugoJsonPost.Permalink
-
-		objArray = append(objArray, mapObj)
+		objArray = append(objArray, &algobj)
 	}
 	zap.S().Infof("generate algolia index success: %v ms", (time.Now().UnixNano()/1e6)-algoliaStartTime)
 	zap.S().Infof("generate algolia index num: %v", common.Num)

@@ -48,7 +48,6 @@ func main() {
 
 	undo := zap.ReplaceGlobals(logger)
 	defer undo()
-	zap.L().Info("replaced zap's global loggers")
 
 	// nolint: forbidigo
 	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())

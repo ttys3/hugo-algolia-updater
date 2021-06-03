@@ -96,7 +96,8 @@ func main() {
 
 	startTime := time.Now().UnixNano() / 1e6
 
-	// 运行编译
+	// run hugo
+	zap.S().Infof("begin run hugo to build the site index.json")
 	if err := execHugoBuild(); err != nil {
 		zap.S().Fatal(err)
 	}
@@ -314,7 +315,7 @@ func SegmentsAsynchronous() error {
 func execHugoBuild() error {
 	out, err := common.ExecShell("hugo", "--gc", "--enableGitInfo")
 	if err != nil {
-		return err
+		return fmt.Errorf("exec command failed, out=%s err=%w", out, err)
 	}
 	zap.S().Info(out)
 	return nil

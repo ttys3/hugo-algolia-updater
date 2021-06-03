@@ -17,22 +17,21 @@ var Cfg Config
 var validate = validator.New()
 
 type Config struct {
-	Algolia struct {
-		Index    string `yaml:"index" validate:"ascii"`
-		AdminKey string `yaml:"admin-key" validate:"required"`
-		AppID    string `yaml:"app-id" validate:"required"`
-	} `yaml:"algolia" validate:"required"`
+	// make all config under a single root key so that we can put the whole config into Hugo config.yaml
+	AlgoliaUpdater struct {
+		Algolia struct {
+			Index    string `yaml:"index" validate:"ascii"`
+			AdminKey string `yaml:"admin-key" validate:"required"`
+			AppID    string `yaml:"app-id" validate:"required"`
+		} `yaml:"algolia" validate:"required"`
 
-	Http struct {
-		Proxy string `yaml:"proxy"`
-	} `yaml:"http"`
-
-	Segment struct {
-		Dict struct {
-			Path     string `yaml:"path"`
-			StopPath string `yaml:"stop-path"`
-		} `yaml:"dict"`
-	} `yaml:"segment"`
+		Segment struct {
+			Dict struct {
+				Path     string `yaml:"path"`
+				StopPath string `yaml:"stop-path"`
+			} `yaml:"dict"`
+		} `yaml:"segment"`
+	} `yaml:"algolia-updater" validate:"required"`
 }
 
 func (c *Config) Load(cfgfile string) error {

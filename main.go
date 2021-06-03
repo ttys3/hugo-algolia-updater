@@ -92,7 +92,7 @@ func main() {
 
 	zap.S().Infof("loaded config: %v", config.Cfg)
 
-	jiebaShutdown := common.InitJieba(config.Cfg.Segment.Dict.Path, config.Cfg.Segment.Dict.StopPath)
+	jiebaShutdown := common.InitJieba(config.Cfg.AlgoliaUpdater.Segment.Dict.Path, config.Cfg.AlgoliaUpdater.Segment.Dict.StopPath)
 	defer jiebaShutdown()
 
 	startTime := time.Now().UnixNano() / 1e6
@@ -228,9 +228,12 @@ func main() {
 
 	uploadStartTime := time.Now().UnixNano() / 1e6
 	// 更新分词
-	if err := common.UpdateAlgolia(config.Cfg.Algolia.Index, config.Cfg.Algolia.AppID, config.Cfg.Algolia.AdminKey, objArray); err == nil {
+	if err := common.UpdateAlgolia(config.Cfg.AlgoliaUpdater.Algolia.Index,
+		config.Cfg.AlgoliaUpdater.Algolia.AppID,
+		config.Cfg.AlgoliaUpdater.Algolia.AdminKey,
+		objArray); err == nil {
 		zap.S().Infof("update algolia index %s success: %v ms, %v objects",
-			config.Cfg.Algolia.Index, (time.Now().UnixNano()/1e6)-uploadStartTime, len(objArray))
+			config.Cfg.AlgoliaUpdater.Algolia.Index, (time.Now().UnixNano()/1e6)-uploadStartTime, len(objArray))
 	} else {
 		zap.S().Fatal(err)
 	}

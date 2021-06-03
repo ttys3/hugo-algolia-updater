@@ -1,18 +1,16 @@
 ---
-#配置你的api key
-algolia:
-  index: "your algolia index"
-  admin-key: "your algolia admin key"
-  app-id: "your algolia appID"
+## config hugo-algolia-updater
+algolia-updater:
+  ## config algolia
+  algolia:
+    index: "your algolia index"
+    admin-key: "your algolia admin key"
+    app-id: "your algolia appID"
 
-#字典和停用词位置
-#使用data目录会让hugo命令报错
-segment:
-  dict:
-    path: "dict/dict.txt"
-    stop-path: "dict/stop.txt"
-
-#配置http代理(可选)
-#http:
-#  httpProxy: "127.0.0.1:1087"
+  ## config dict and stop words dict
+  # use `data` dir under Hugo project may cause Hugo panic, so we use `dict` here
+  segment:
+    dict:
+      path: "dict/dict.txt"
+      stop-path: "dict/stop.txt"
 ---

@@ -28,7 +28,6 @@ func Exists(path string) (bool, error) {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		zap.S().Error("exists error: " + path + " not found")
 		return false, nil
 	}
 	return true, err

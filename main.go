@@ -260,6 +260,7 @@ func initLogger() func() {
 	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	if !showDebugLog {
 		zapCfg.EncoderConfig.EncodeCaller = nil
+		zapCfg.DisableStacktrace = true
 	}
 	logger, err := zapCfg.Build()
 	if err != nil {

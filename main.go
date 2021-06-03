@@ -166,6 +166,7 @@ func main() {
 	// 创建分词
 	algoliaStartTime := time.Now().UnixNano() / 1e6
 	for _, article := range common.NeedArticleList {
+		// TODO better handled insertion element to CacheAlgoliasMap, use full model.Algolia struct
 		common.CacheAlgoliasMap[article.HugoJsonPost.Permalink] = &model.Algolia{Title: article.HugoJsonPost.Title}
 	}
 

@@ -39,66 +39,18 @@ var (
 )
 
 func main() {
-	// nolint: forbidigo
-	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())
-
-	flag.BoolVar(&showVersion, "v", false, "show version and exit")
-	flag.BoolVar(&cleanGeneratedJson, "clean", false, "clean generated json files")
-	flag.BoolVar(&showDebugLog, "debug", false, "show debug level log")
-	flag.StringVar(&configFile, "c", DftConfigFile, "config file path, if not specified, use config.yaml under current working dir")
-	flag.Parse()
+	initFlags()
 
 	if showVersion {
 		return
 	}
 
 	// init logger
-	// https://github.com/uber-go/zap/issues/717#issuecomment-496612544
-	// The default global logger used by zap.L() and zap.S() is a no-op logger.
-	// To configure the global loggers, you must use ReplaceGlobals.
-	logLevel := zap.InfoLevel
-	if showDebugLog {
-		logLevel = zap.DebugLevel
-	}
-	zapCfg := zap.Config{
-		Level:            zap.NewAtomicLevelAt(logLevel),
-		Development:      false,
-		Encoding:         "console",
-		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
-	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	if !showDebugLog {
-		zapCfg.EncoderConfig.EncodeCaller = nil
-	}
-	logger, err := zapCfg.Build()
-	if err != nil {
-		panic(err)
-	}
-	defer logger.Sync()
-
-	undo := zap.ReplaceGlobals(logger)
-	defer undo()
+	sync := initLogger()
+	defer sync()
 
 	if cleanGeneratedJson {
-		toClean := []string{
-			common.ALGOLIA_COMPLIE_JSON_PATH,
-			common.CACHE_ALGOLIA_JSON_PATH,
-			common.MD5_ALGOLIA_JSON_PATH,
-			common.HUGO_INDEX_JSON_PATH,
-		}
-		for _, f := range toClean {
-			if err := os.Remove(f); err == nil {
-				zap.S().Infof("%s removed successfully", f)
-			} else {
-				if os.IsNotExist(err) {
-					zap.S().Infof("%s not exists", f)
-				} else {
-					zap.S().Errorf("remove %s failed, err=%v", f, err)
-				}
-			}
-		}
+		doCleanGeneratedJson()
 		return
 	}
 
@@ -108,7 +60,6 @@ func main() {
 	if err := config.Cfg.Validate(); err != nil {
 		zap.S().Fatal(err)
 	}
-
 	zap.S().Debugf("loaded config: %v", config.Cfg)
 
 	jiebaShutdown := common.InitJieba(config.Cfg.AlgoliaUpdater.Segment.Dict.Path, config.Cfg.AlgoliaUpdater.Segment.Dict.StopPath)
@@ -268,6 +219,68 @@ func main() {
 
 	zap.S().Infof("save cache success: %v ms", (time.Now().UnixNano()/1e6)-saveStartTime)
 	zap.S().Infof("total : %v ms", (time.Now().UnixNano()/1e6)-startTime)
+}
+
+func doCleanGeneratedJson() {
+	toClean := []string{
+		common.ALGOLIA_COMPLIE_JSON_PATH,
+		common.CACHE_ALGOLIA_JSON_PATH,
+		common.MD5_ALGOLIA_JSON_PATH,
+		common.HUGO_INDEX_JSON_PATH,
+	}
+	for _, f := range toClean {
+		if err := os.Remove(f); err == nil {
+			zap.S().Infof("%s removed successfully", f)
+		} else {
+			if os.IsNotExist(err) {
+				zap.S().Infof("%s not exists", f)
+			} else {
+				zap.S().Errorf("remove %s failed, err=%v", f, err)
+			}
+		}
+	}
+}
+
+func initLogger() func() {
+	// https://github.com/uber-go/zap/issues/717#issuecomment-496612544
+	// The default global logger used by zap.L() and zap.S() is a no-op logger.
+	// To configure the global loggers, you must use ReplaceGlobals.
+	logLevel := zap.InfoLevel
+	if showDebugLog {
+		logLevel = zap.DebugLevel
+	}
+	zapCfg := zap.Config{
+		Level:            zap.NewAtomicLevelAt(logLevel),
+		Development:      false,
+		Encoding:         "console",
+		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	if !showDebugLog {
+		zapCfg.EncoderConfig.EncodeCaller = nil
+	}
+	logger, err := zapCfg.Build()
+	if err != nil {
+		panic(err)
+	}
+	undo := zap.ReplaceGlobals(logger)
+	return func() {
+		logger.Sync()
+		undo()
+	}
+}
+
+func initFlags() {
+	// nolint: forbidigo
+	fmt.Printf("%s %s %s @%s\n", serviceName, version, buildTime, runtime.Version())
+
+	flag.BoolVar(&showVersion, "v", false, "show version and exit")
+	flag.BoolVar(&cleanGeneratedJson, "clean", false, "clean generated json files")
+	flag.BoolVar(&showDebugLog, "debug", false, "show debug level log")
+	flag.StringVar(&configFile, "c", DftConfigFile, "config file path, if not specified, use config.yaml under current working dir")
+	flag.Parse()
 }
 
 func getArticleList() []*model.Article {
